@@ -29,7 +29,7 @@ RUN apt-get -q update  \
 	&& apt-get upgrade -y  \
 	&& apt-get -q clean  \
 	&& apt-get -q install -y sudo apt-transport-https zip unzip bzip2 xz-utils git \
-	dnsutils gettext wget build-essential openssl locales make docker-ce  \
+	dnsutils gettext wget build-essential openssl locales make docker-ce python3-pip python3-venv \
 	&& curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash  \
 	&& apt-get -q install git-lfs  \
 	&& git lfs install  \
@@ -41,6 +41,7 @@ RUN git config --global http.sslverify false  \
 	&& git config --global url."https://".insteadOf git://  \
 	&& git config --global http.postBuffer 1048576000
 
+RUN pip3 install -U pip setuptools && pip3 install wheel
 
 ENV NODE_VERSION=v12.20.1
 RUN curl -l https://raw.githubusercontent.com/creationix/nvm/v0.35.3/install.sh -o /tmp/install.sh  \
@@ -65,6 +66,9 @@ RUN wget --quiet --output-document=/usr/local/bin/kubectl https://storage.google
 
 RUN wget --quiet --output-document=/usr/local/bin/kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.2.1/kustomize_kustomize.v3.2.1_linux_amd64 \
 	&& chmod +x /usr/local/bin/kustomize
+
+RUN curl -L https://github.com/tektoncd/cli/releases/download/v0.11.0/tkn_0.11.0_Linux_x86_64.tar.gz | tar -xz tkn \
+    && mv tkn /usr/local/bin/
 
 ARG HELM2_VERSION=v2.17.0
 ARG HELM3_VERSION=v3.4.2

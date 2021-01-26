@@ -13,11 +13,11 @@
 # - GIT_COMMIT:           git commit hash
 # - GIT_COMMIT_SHORT:     git commit hash short
 
-REGION=${REGION:="us-south"}
-ORG=${ORG:="dev-advo"}
-SPACE=${SPACE:="dev"}
-
 set -xe
+
+REGION=${REGION:-"us-south"}
+ORG=${ORG:-"dev-advo"}
+SPACE=${SPACE:-"dev"}
 
 ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
@@ -45,9 +45,6 @@ if [ -f build.properties ]; then
 else
   echo "build.properties : not found"
 fi
-# also run 'env' command to find all available env variables
-# or learn more about the available environment variables at:
-# https://cloud.ibm.com/docs/services/ContinuousDelivery/pipeline_deploy_var.html#deliverypipeline_environment
 
 echo "=========================================================="
 echo "Checking registry current plan and quota"

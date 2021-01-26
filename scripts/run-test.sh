@@ -6,16 +6,19 @@ set -xe
 # - ORG:    target organization (dev-advo as default)
 # - SPACE:  target space (dev as default)
 
-
-REGION=${REGION:="us-south"}
-ORG=${ORG:="dev-advo"}
-SPACE=${SPACE:="dev"}
+REGION=${REGION:-"us-south"}
+ORG=${ORG:-"dev-advo"}
+SPACE=${SPACE:-"dev"}
 
 # Git repo cloned at $WORKING_DIR, copy into $ARCHIVE_DIR and
 # could be used by next stage
-if [ "$ARCHIVE_DIR" != "." ]; then
-  mkdir -p $ARCHIVE_DIR
-  cp -r . $ARCHIVE_DIR
+echo "Checking archive dir presence"
+if [ -z "${ARCHIVE_DIR}" ]; then
+  echo -e "Build archive directory contains entire working directory."
+else
+  echo -e "Copying working dir into build archive directory: ${ARCHIVE_DIR} "
+  mkdir -p ${ARCHIVE_DIR}
+  find . -mindepth 1 -maxdepth 1 -not -path "./$ARCHIVE_DIR" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
 fi
 
 GIT_COMMIT_SHORT=$(git log -n1 --format=format:"%h")
@@ -29,7 +32,6 @@ echo "SOURCE_BUILD_NUMBER=${BUILD_NUMBER}" >> $ARCHIVE_DIR/build.properties
 echo "REGION=${REGION}" >> $ARCHIVE_DIR/build.properties
 echo "ORG=${ORG}" >> $ARCHIVE_DIR/build.properties
 echo "SPACE=${SPACE}" >> $ARCHIVE_DIR/build.properties
-
 cat $ARCHIVE_DIR/build.properties
 
 make run-go-unittests | tee $ARCHIVE_DIR/run-go-unittests.txt
