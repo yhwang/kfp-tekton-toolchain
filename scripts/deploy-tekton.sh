@@ -47,8 +47,6 @@ if [ -z $ip_addr ]; then
   exit 1
 fi
 
-source <(curl -sSL "https://raw.githubusercontent.com/evan-hataishi/kfp-tekton/toolchain/scripts/deploy/helper_functions.sh")
-
 kubectl apply -f "${ARCHIVE_DIR}/${TEKTON_MANIFEST_FILENAME}"
 
 wait_for_namespace $TEKTON_NS $MAX_RETRIES $SLEEP_TIME || EXIT_CODE=$?

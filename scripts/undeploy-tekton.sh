@@ -1,10 +1,14 @@
 #!/bin/bash
 set -ex
+# Need the following env var
+# - KUBEFLOW_NS:                        namespace for kfp-tekton, defulat: kubeflow
 
 # These env vars should come from the build.properties that `build-image.sh` generates
 echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}"
 echo "TEKTON_VERSION=${TEKTON_VERSION}"
 echo "TEKTON_NS=${TEKTON_NS}"
+echo "TEKTON_MANIFEST=${TEKTON_MANIFEST}"
+echo "KUBEFLOW_NS=${KUBEFLOW_NS}"
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
 echo "IMAGE_NAME=${IMAGE_NAME}"
@@ -20,14 +24,6 @@ echo "SPACE=${SPACE}"
 MAX_RETRIES="${MAX_RETRIES:-5}"
 SLEEP_TIME="${SLEEP_TIME:-10}"
 EXIT_CODE=0
-TEKTON_NS="${TEKTON_NS:-"tekton-pipelines"}"
-# Previous versions use form: "previous/vX.Y.Z"
-TEKTON_VERSION="${TEKTON_VERSION:-"latest"}"
-TEKTON_MANIFEST="${TEKTON_MANIFEST:-https://storage.googleapis.com/tekton-releases/pipeline/${TEKTON_VERSION}/release.yaml}"
-
-echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}"
-echo "TEKTON_VERSION=${TEKTON_VERSION}"
-echo "TEKTON_NS=${TEKTON_NS}"
 
 ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
@@ -36,10 +32,10 @@ ibmcloud ks cluster config -c $PIPELINE_KUBERNETES_CLUSTER_NAME
 MANIFEST="${MANIFEST:-"tekton-manifest.yaml"}"
 KUBEFLOW_NS="${KUBEFLOW_NS:-kubeflow}"
 
-kubectl delete -f $MANIFEST || :
+kubectl delete -f $TEKTON_MANIFEST_FILENAME || :
 
 kubectl delete MutatingWebhookConfiguration cache-webhook-kubeflow webhook.pipeline.tekton.dev || :
 
-# kubectl delete ns $KUBEFLOW_NS
+kubectl delete ns $KUBEFLOW_NS
 
 echo "Finished kfp-tekton undeployment."
