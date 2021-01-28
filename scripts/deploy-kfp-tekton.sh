@@ -5,19 +5,6 @@ set -ex
 # - PIPELINE_KUBERNETES_CLUSTER_NAME:   kube cluster name
 # - KUBEFLOW_NS:                        namespace for kfp-tekton, defulat: kubeflow
 
-# These env vars should come from the build.properties that `build-image.sh` generates
-echo "REGISTRY_URL=${REGISTRY_URL}"
-echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
-echo "IMAGE_NAME=${IMAGE_NAME}"
-echo "BUILD_NUMBER=${BUILD_NUMBER}"
-echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
-echo "GIT_BRANCH=${GIT_BRANCH}"
-echo "GIT_COMMIT=${GIT_COMMIT}"
-echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}"
-echo "REGION=${REGION}"
-echo "ORG=${ORG}"
-echo "SPACE=${SPACE}"
-
 MAX_RETRIES="${MAX_RETRIES:-5}"
 SLEEP_TIME="${SLEEP_TIME:-10}"
 EXIT_CODE=0
@@ -78,20 +65,18 @@ imagePullSecrets:
 EOF
 )
 
-# Prepare the archive_dir first in case the job fails.
-echo "Checking archive dir presence"
-if [ -z "${ARCHIVE_DIR}" ]; then
-  echo -e "Build archive directory contains entire working directory."
-else
-  echo -e "Copying working dir into build archive directory: ${ARCHIVE_DIR} "
-  mkdir -p ${ARCHIVE_DIR}
-  find . -mindepth 1 -maxdepth 1 -not -path "./$ARCHIVE_DIR" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
-fi
-
-cp build.properties $ARCHIVE_DIR/ || :
-
-echo "KUBEFLOW_NS=${KUBEFLOW_NS}" >> $ARCHIVE_DIR/build.properties
-echo "MANIFEST=${MANIFEST}" >> $ARCHIVE_DIR/build.properties
+# These env vars should come from the build.properties that `build-image.sh` generates
+echo "REGISTRY_URL=${REGISTRY_URL}"
+echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
+echo "IMAGE_NAME=${IMAGE_NAME}"
+echo "BUILD_NUMBER=${BUILD_NUMBER}"
+echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
+echo "GIT_BRANCH=${GIT_BRANCH}"
+echo "GIT_COMMIT=${GIT_COMMIT}"
+echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}"
+echo "REGION=${REGION}"
+echo "ORG=${ORG}"
+echo "SPACE=${SPACE}"
 
 # main job starts from here
 # ====================================================
@@ -147,3 +132,18 @@ then
 fi
 
 echo "Finished kfp-tekton deployment." 
+
+echo "=========================================================="
+echo "Copy and prepare artificates for subsequent stages"
+if [ -z "${ARCHIVE_DIR}" ]; then
+  echo -e "Build archive directory contains entire working directory."
+else
+  echo -e "Copying working dir into build archive directory: ${ARCHIVE_DIR} "
+  mkdir -p ${ARCHIVE_DIR}
+  find . -mindepth 1 -maxdepth 1 -not -path "./$ARCHIVE_DIR" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
+fi
+
+cp build.properties $ARCHIVE_DIR/ || :
+
+echo "KUBEFLOW_NS=${KUBEFLOW_NS}" >> $ARCHIVE_DIR/build.properties
+echo "MANIFEST=${MANIFEST}" >> $ARCHIVE_DIR/build.properties

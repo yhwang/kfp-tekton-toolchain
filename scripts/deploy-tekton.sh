@@ -6,6 +6,15 @@ set -ex
 # - TEKTON_VERSION:                         tekton version
 # - TEKTON_NS:                              tekton namespace, defulat: tekton-pipeline
 
+MAX_RETRIES="${MAX_RETRIES:-5}"
+SLEEP_TIME="${SLEEP_TIME:-10}"
+EXIT_CODE=0
+TEKTON_NS="${TEKTON_NS:-"tekton-pipelines"}"
+# Previous versions use form: "previous/vX.Y.Z"
+TEKTON_VERSION="${TEKTON_VERSION:-"latest"}"
+TEKTON_MANIFEST="${TEKTON_MANIFEST:-https://storage.googleapis.com/tekton-releases/pipeline/${TEKTON_VERSION}/release.yaml}"
+TEKTON_MANIFEST_FILENAME=tekton-manifest.yaml
+
 # These env vars should come from the build.properties that `build-image.sh` generates
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
@@ -18,22 +27,12 @@ echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}"
 echo "REGION=${REGION}"
 echo "ORG=${ORG}"
 echo "SPACE=${SPACE}"
-
-MAX_RETRIES="${MAX_RETRIES:-5}"
-SLEEP_TIME="${SLEEP_TIME:-10}"
-EXIT_CODE=0
-TEKTON_NS="${TEKTON_NS:-"tekton-pipelines"}"
-# Previous versions use form: "previous/vX.Y.Z"
-TEKTON_VERSION="${TEKTON_VERSION:-"latest"}"
-TEKTON_MANIFEST="${TEKTON_MANIFEST:-https://storage.googleapis.com/tekton-releases/pipeline/${TEKTON_VERSION}/release.yaml}"
-
 echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}"
 echo "TEKTON_VERSION=${TEKTON_VERSION}"
 echo "TEKTON_NS=${TEKTON_NS}"
 
 # Retrive tekton yaml and store it to ARCHIVE_DIR and
 # could be used at cleanup stage
-TEKTON_MANIFEST_FILENAME=tekton-manifest.yaml
 curl -sSL "$TEKTON_MANIFEST" -o "${ARCHIVE_DIR}/${TEKTON_MANIFEST_FILENAME}"
 
 ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
@@ -67,7 +66,8 @@ fi
 
 echo "Finished tekton deployment."
 
-echo "Checking archive dir presence"
+echo "=========================================================="
+echo "Copy and prepare artificates for subsequent stages"
 if [ -z "${ARCHIVE_DIR}" ]; then
   echo -e "Build archive directory contains entire working directory."
 else
