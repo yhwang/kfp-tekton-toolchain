@@ -36,12 +36,32 @@ ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
 ibmcloud ks cluster config -c $PIPELINE_KUBERNETES_CLUSTER_NAME
 
+PATCH=$(cat << EOF
+diff --git a/sdk/python/tests/compiler/compiler_tests_e2e.py b/sdk/python/tests/compiler/compiler_tests_e2e.py
+index f0b97c1..247fd79 100644
+--- a/sdk/python/tests/compiler/compiler_tests_e2e.py
++++ b/sdk/python/tests/compiler/compiler_tests_e2e.py
+@@ -498,6 +498,9 @@ def _generate_test_list(file_name_expr="*.yaml") -> [dict]:
+     for yaml_file in yaml_files:
+         with open(yaml_file, 'r') as f:
+             pipeline_run = yaml.safe_load(f)
++        if pipeline_run.get("metadata") is None:
++            print("skip yaml: {}".format(yaml_file))
++            continue
+         pipeline_runs.append({
+             "name": pipeline_run["metadata"]["name"],
+             "yaml_file": yaml_file,
+EOF
+)
+echo "$PATCH" | git apply -
+
 # Prepare python venv and install sdk
 python3 -m venv .venv                                                           
 source .venv/bin/activate                                                       
 pip install wheel 
 pip install -e sdk/python
 pip install -U setuptools
+pip install pytest
 
 # flip coin example
 run_flip_coin_example() {
@@ -89,6 +109,8 @@ run_flip_coin_example() {
 
 RESULT=0
 run_flip_coin_example 10 || RESULT=$?
+
+make test KUBECONFIG=/root/.kube/config GENERATE_GOLDEN_E2E_LOGS=True || RESULT=$?
 
 if [[ "$RESULT" -ne 0 ]]; then
   echo "e2e test FAILED"

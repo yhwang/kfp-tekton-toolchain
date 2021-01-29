@@ -24,12 +24,15 @@ ENV DEBCONF_NONINTERACTIVE_SEEN=true
 RUN apt-get -q update  \
 	&& apt-get install -y apt-utils apt-transport-https ca-certificates curl software-properties-common \
 	&& curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
-	&& add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+	&& add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable" \
+	&& add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get -q update  \
 	&& apt-get upgrade -y  \
 	&& apt-get -q clean  \
 	&& apt-get -q install -y sudo apt-transport-https zip unzip bzip2 xz-utils git \
-	dnsutils gettext wget build-essential openssl locales make docker-ce python3-pip python3-venv \
+	dnsutils gettext wget build-essential openssl locales make docker-ce python3-pip \
+	python3.8 python3.8-venv && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 9 \
+	&& update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 \
 	&& curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash  \
 	&& apt-get -q install git-lfs  \
 	&& git lfs install  \
