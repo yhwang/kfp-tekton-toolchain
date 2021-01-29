@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Copyright 2021 kubeflow.org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 set -ex
 
 # Need the following env
@@ -68,7 +83,6 @@ EOF
 # These env vars should come from the build.properties that `build-image.sh` generates
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
-echo "IMAGE_NAME=${IMAGE_NAME}"
 echo "BUILD_NUMBER=${BUILD_NUMBER}"
 echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
 echo "GIT_BRANCH=${GIT_BRANCH}"
@@ -93,7 +107,7 @@ then
   exit "$EXIT_CODE"
 fi
 
-# copy icr secret to target namespace
+# copy icr secret("all-icr-io") to target namespace
 kubectl get secret all-icr-io -n default -o yaml | sed "s/default/${KUBEFLOW_NS}/g" | kubectl apply -f -
 
 # Edit image names in kustomize files 
@@ -110,12 +124,12 @@ kustomize edit add patch sa_patch.yaml
 popd > /dev/null
 
 # Build manifest
-kustomize build $KUSTOMIZE_DIR -o $MANIFEST
+kustomize build "$KUSTOMIZE_DIR" -o "$MANIFEST"
 
 # Deploy manifest
-deploy_with_retries "-f" $MANIFEST $MAX_RETRIES $SLEEP_TIME || EXIT_CODE=$?
+deploy_with_retries "-f" "$MANIFEST" "$MAX_RETRIES" "$SLEEP_TIME" || EXIT_CODE=$?
 
-if [[ $EXIT_CODE -ne 0 ]]
+if [[ "$EXIT_CODE" -ne 0 ]]
 then
   echo "Deploy unsuccessful. Failure applying $KUSTOMIZE_DIR."
   exit 1
@@ -123,9 +137,9 @@ fi
 
 # Check if all pods are running - allow 60 retries (10 minutes)
 
-wait_for_pods $KUBEFLOW_NS 60 $SLEEP_TIME || EXIT_CODE=$?
+wait_for_pods "$KUBEFLOW_NS" 60 "$SLEEP_TIME" || EXIT_CODE=$?
 
-if [[ $EXIT_CODE -ne 0 ]]
+if [[ "$EXIT_CODE" -ne 0 ]]
 then
   echo "Deploy unsuccessful. Not all pods running."
   exit 1
@@ -135,15 +149,15 @@ echo "Finished kfp-tekton deployment."
 
 echo "=========================================================="
 echo "Copy and prepare artificates for subsequent stages"
-if [ -z "${ARCHIVE_DIR}" ]; then
+if [[ -z "$ARCHIVE_DIR" || "$ARCHIVE_DIR" == "." ]]; then
   echo -e "Build archive directory contains entire working directory."
 else
   echo -e "Copying working dir into build archive directory: ${ARCHIVE_DIR} "
-  mkdir -p ${ARCHIVE_DIR}
+  mkdir -p "$ARCHIVE_DIR"
   find . -mindepth 1 -maxdepth 1 -not -path "./$ARCHIVE_DIR" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
 fi
 
-cp build.properties $ARCHIVE_DIR/ || :
+cp build.properties "${ARCHIVE_DIR}/" || :
 
-echo "KUBEFLOW_NS=${KUBEFLOW_NS}" >> $ARCHIVE_DIR/build.properties
-echo "MANIFEST=${MANIFEST}" >> $ARCHIVE_DIR/build.properties
+echo "KUBEFLOW_NS=${KUBEFLOW_NS}" >> "${ARCHIVE_DIR}/build.properties"
+echo "MANIFEST=${MANIFEST}" >> "${ARCHIVE_DIR}/build.properties"

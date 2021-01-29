@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Copyright 2021 kubeflow.org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 set -ex
 
 # Need the following env
@@ -18,7 +33,6 @@ TEKTON_MANIFEST_FILENAME=tekton-manifest.yaml
 # These env vars should come from the build.properties that `build-image.sh` generates
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
-echo "IMAGE_NAME=${IMAGE_NAME}"
 echo "BUILD_NUMBER=${BUILD_NUMBER}"
 echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
 echo "GIT_BRANCH=${GIT_BRANCH}"
@@ -37,7 +51,7 @@ curl -sSL "$TEKTON_MANIFEST" -o "${ARCHIVE_DIR}/${TEKTON_MANIFEST_FILENAME}"
 
 ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
-ibmcloud ks cluster config -c $PIPELINE_KUBERNETES_CLUSTER_NAME
+ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
 
 # Make sure the cluster is running and get the ip_address
 ip_addr=$(ibmcloud ks workers --cluster $PIPELINE_KUBERNETES_CLUSTER_NAME | grep normal | awk '{ print $2 }')
@@ -68,18 +82,18 @@ echo "Finished tekton deployment."
 
 echo "=========================================================="
 echo "Copy and prepare artificates for subsequent stages"
-if [ -z "${ARCHIVE_DIR}" ]; then
+if [[ -z "$ARCHIVE_DIR" || "$ARCHIVE_DIR" == "." ]]; then
   echo -e "Build archive directory contains entire working directory."
 else
   echo -e "Copying working dir into build archive directory: ${ARCHIVE_DIR} "
   mkdir -p ${ARCHIVE_DIR}
-  find . -mindepth 1 -maxdepth 1 -not -path "./$ARCHIVE_DIR" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
+  find . -mindepth 1 -maxdepth 1 -not -path "./${ARCHIVE_DIR}" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
 fi
 
-cp build.properties $ARCHIVE_DIR/ || :
+cp build.properties "${ARCHIVE_DIR}/" || :
 
-echo "TEKTON_NS=${TEKTON_NS}" >> $ARCHIVE_DIR/build.properties
-echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}" >> $ARCHIVE_DIR/build.properties
-echo "TEKTON_VERSION=${TEKTON_VERSION}" >> $ARCHIVE_DIR/build.properties
-echo "TEKTON_MANIFEST=${TEKTON_MANIFEST}" >> $ARCHIVE_DIR/build.properties
-echo "TEKTON_MANIFEST_FILENAME=${TEKTON_MANIFEST_FILENAME}" >> $ARCHIVE_DIR/build.properties
+echo "TEKTON_NS=${TEKTON_NS}" >> "${ARCHIVE_DIR}/build.properties"
+echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}" >> "${ARCHIVE_DIR}/build.properties"
+echo "TEKTON_VERSION=${TEKTON_VERSION}" >> "${ARCHIVE_DIR}/build.properties"
+echo "TEKTON_MANIFEST=${TEKTON_MANIFEST}" >> "${ARCHIVE_DIR}/build.properties"
+echo "TEKTON_MANIFEST_FILENAME=${TEKTON_MANIFEST_FILENAME}" >> "${ARCHIVE_DIR}/build.properties"

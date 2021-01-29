@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Copyright 2021 kubeflow.org
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 set -ex
 
 # Need the following env
@@ -8,7 +23,6 @@ set -ex
 # These env vars should come from the build.properties that `build-image.sh` generates
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
-echo "IMAGE_NAME=${IMAGE_NAME}"
 echo "BUILD_NUMBER=${BUILD_NUMBER}"
 echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
 echo "GIT_BRANCH=${GIT_BRANCH}"
@@ -22,38 +36,19 @@ echo "KUBEFLOW_NS=${KUBEFLOW_NS}"
 
 # copy files to ARCHIVE_DIR for next stage if needed
 echo "Checking archive dir presence"
-if [ -z "${ARCHIVE_DIR}" ]; then
+if [[ -z "$ARCHIVE_DIR" || "$ARCHIVE_DIR" == "." ]]; then
   echo -e "Build archive directory contains entire working directory."
 else
   echo -e "Copying working dir into build archive directory: ${ARCHIVE_DIR} "
-  mkdir -p ${ARCHIVE_DIR}
-  find . -mindepth 1 -maxdepth 1 -not -path "./$ARCHIVE_DIR" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
+  mkdir -p "$ARCHIVE_DIR"
+  find . -mindepth 1 -maxdepth 1 -not -path "./${ARCHIVE_DIR}" -exec cp -R '{}' "${ARCHIVE_DIR}/" ';'
 fi
-cp build.properties $ARCHIVE_DIR/ || :
+cp build.properties "${ARCHIVE_DIR}/" || :
 
 # Set up kubernetes config
 ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
-ibmcloud ks cluster config -c $PIPELINE_KUBERNETES_CLUSTER_NAME
-
-PATCH=$(cat << EOF
-diff --git a/sdk/python/tests/compiler/compiler_tests_e2e.py b/sdk/python/tests/compiler/compiler_tests_e2e.py
-index f0b97c1..247fd79 100644
---- a/sdk/python/tests/compiler/compiler_tests_e2e.py
-+++ b/sdk/python/tests/compiler/compiler_tests_e2e.py
-@@ -498,6 +498,9 @@ def _generate_test_list(file_name_expr="*.yaml") -> [dict]:
-     for yaml_file in yaml_files:
-         with open(yaml_file, 'r') as f:
-             pipeline_run = yaml.safe_load(f)
-+        if pipeline_run.get("metadata") is None:
-+            print("skip yaml: {}".format(yaml_file))
-+            continue
-         pipeline_runs.append({
-             "name": pipeline_run["metadata"]["name"],
-             "yaml_file": yaml_file,
-EOF
-)
-echo "$PATCH" | git apply -
+ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
 
 # Prepare python venv and install sdk
 python3 -m venv .venv                                                           
@@ -104,15 +99,25 @@ run_flip_coin_example() {
     echo " =====   flip coin sample FAILED ====="
   fi
 
-  return $REV
+  return "$REV"
 }
 
 RESULT=0
 run_flip_coin_example 10 || RESULT=$?
 
-make test KUBECONFIG=/root/.kube/config GENERATE_GOLDEN_E2E_LOGS=True || RESULT=$?
+# check if doi is integrated in this toolchain
+if jq -e '.services[] | select(.service_id=="draservicebroker")' _toolchain.json; then
+  PUBLISH_BUILD_STATUS=pass
+  if [[ "$RESULT" -ne 0 ]]; then
+    PUBLISH_BUILD_STATUS=fail
+  fi
+  ibmcloud doi publishbuildrecord --branch "${GIT_BRANCH}" --repositoryurl "${GIT_URL}" --commitid "${GIT_COMMIT}" \
+    --buildnumber "${BUILD_NUMBER}" --logicalappname "kfp-tekton" --status "$PUBLISH_BUILD_STATUS"
+fi
 
 if [[ "$RESULT" -ne 0 ]]; then
   echo "e2e test FAILED"
   exit 1
 fi
+
+echo "e2e test PASSED"
