@@ -112,7 +112,7 @@ kubectl get secret all-icr-io -n default -o yaml | sed "s/default/${KUBEFLOW_NS}
 
 # Edit image names in kustomize files 
 # No need to build as long as deployed with "kubectl apply -k"
-pushd $KUSTOMIZE_DIR > /dev/null
+pushd "$KUSTOMIZE_DIR" > /dev/null
 
 kustomize edit set image "$API_SERVER_IMAGE=$NEW_API_SERVER_IMAGE"
 kustomize edit set image "$METADATA_WRITER_IMAGE=$NEW_METADATA_WRITER_IMAGE"
@@ -159,5 +159,7 @@ fi
 
 cp build.properties "${ARCHIVE_DIR}/" || :
 
-echo "KUBEFLOW_NS=${KUBEFLOW_NS}" >> "${ARCHIVE_DIR}/build.properties"
-echo "MANIFEST=${MANIFEST}" >> "${ARCHIVE_DIR}/build.properties"
+{
+  echo "KUBEFLOW_NS=${KUBEFLOW_NS}"
+  echo "MANIFEST=${MANIFEST}"
+} >> "${ARCHIVE_DIR}/build.properties"

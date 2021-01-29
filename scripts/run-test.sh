@@ -38,15 +38,17 @@ else
 fi
 
 # Record git info
-echo "GIT_URL=${GIT_URL}" >> "${ARCHIVE_DIR}/build.properties"
-echo "GIT_BRANCH=${GIT_BRANCH}" >> "${ARCHIVE_DIR}/build.properties"
-echo "GIT_COMMIT=${GIT_COMMIT}" >> "${ARCHIVE_DIR}/build.properties"
-echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}" >> "${ARCHIVE_DIR}/build.properties"
-echo "SOURCE_BUILD_NUMBER=${BUILD_NUMBER}" >> "${ARCHIVE_DIR}/build.properties"
-echo "REGION=${REGION}" >> "${ARCHIVE_DIR}/build.properties"
-echo "ORG=${ORG}" >> "${ARCHIVE_DIR}/build.properties"
-echo "SPACE=${SPACE}" >> "${ARCHIVE_DIR}/build.properties"
-cat "${ARCHIVE_DIR}/build.properties" | grep -v -i password
+{
+  echo "GIT_URL=${GIT_URL}"
+  echo "GIT_BRANCH=${GIT_BRANCH}"
+  echo "GIT_COMMIT=${GIT_COMMIT}"
+  echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}"
+  echo "SOURCE_BUILD_NUMBER=${BUILD_NUMBER}"
+  echo "REGION=${REGION}"
+  echo "ORG=${ORG}"
+  echo "SPACE=${SPACE}"
+} >> "${ARCHIVE_DIR}/build.properties"
+grep -v -i password "${ARCHIVE_DIR}/build.properties"
 
 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"

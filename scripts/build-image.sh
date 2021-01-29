@@ -57,7 +57,7 @@ print_env_vars() {
   # View build properties
   if [ -f build.properties ]; then
     echo "build.properties:"
-    cat build.properties | grep -v -i password
+    grep -v -i password build.properties
   else
     echo "build.properties : not found"
   fi
@@ -87,13 +87,15 @@ artificate_for_next_stage() {
   cp build.properties "${ARCHIVE_DIR}/" || :
 
   # IMAGE information from build.properties is used in Helm Chart deployment to set the release name
-  echo "IMAGE_TAG=${IMAGE_TAG}" >> "${ARCHIVE_DIR}/build.properties"
-  # REGISTRY information from build.properties is used in Helm Chart deployment to generate cluster secret
-  echo "REGISTRY_URL=${REGISTRY_URL}" >> "${ARCHIVE_DIR}/build.properties"
-  echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}" >> "${ARCHIVE_DIR}/build.properties"
-  echo "GIT_BRANCH=${GIT_BRANCH}" >> "${ARCHIVE_DIR}/build.properties"
+  {
+    echo "IMAGE_TAG=${IMAGE_TAG}"
+    # REGISTRY information from build.properties is used in Helm Chart deployment to generate cluster secret
+    echo "REGISTRY_URL=${REGISTRY_URL}"
+    echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
+    echo "GIT_BRANCH=${GIT_BRANCH}"
+  } >> "${ARCHIVE_DIR}/build.properties"
   echo "File 'build.properties' created for passing env variables to subsequent pipeline jobs:"
-  cat "${ARCHIVE_DIR}/build.properties" | grep -v -i password
+  grep -v -i password "${ARCHIVE_DIR}/build.properties"
 }
 
 check_prune_images() {
@@ -104,7 +106,7 @@ check_prune_images() {
   ibmcloud cr quota || true
   echo "If needed, discard older images using: ibmcloud cr image-rm"
   echo "Checking registry namespace: ${REGISTRY_NAMESPACE}"
-  NS=$( ibmcloud cr namespaces | grep ${REGISTRY_NAMESPACE} ||: )
+  NS=$( ibmcloud cr namespaces | grep "${REGISTRY_NAMESPACE}" ||: )
   if [ -z "${NS}" ]; then
       echo "Registry namespace ${REGISTRY_NAMESPACE} not found, creating it."
       ibmcloud cr namespace-add "${REGISTRY_NAMESPACE}"

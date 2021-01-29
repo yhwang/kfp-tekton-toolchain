@@ -46,7 +46,7 @@ fi
 cp build.properties "${ARCHIVE_DIR}/" || :
 
 # Set up kubernetes config
-ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
+ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
 ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
 
@@ -63,11 +63,13 @@ run_flip_coin_example() {
   local REV=1
   local DURATION=$1
   shift
+  local PIPELINE_ID
+  local RUN_ID
 
   echo " =====   flip coin sample  ====="
   python3 samples/flip-coin/condition.py
   kfp pipeline upload -p e2e-flip-coin samples/flip-coin/condition.yaml || :
-  local PIPELINE_ID=$(kfp pipeline list | grep 'e2e-flip-coin' | awk '{print $2}')
+  PIPELINE_ID=$(kfp pipeline list | grep 'e2e-flip-coin' | awk '{print $2}')
   if [[ -z "$PIPELINE_ID" ]]; then
     echo "Failed to upload pipeline"
     return "$REV"
@@ -75,7 +77,7 @@ run_flip_coin_example() {
 
   local RUN_NAME="e2e-flip-coin-run-$((RANDOM%10000+1))"
   kfp run submit -e exp-e2e-flip-coin -r "$RUN_NAME" -p "$PIPELINE_ID" || :
-  local RUN_ID=$(kfp run list | grep "$RUN_NAME" | awk '{print $2}')
+  RUN_ID=$(kfp run list | grep "$RUN_NAME" | awk '{print $2}')
   if [[ -z "$RUN_ID" ]]; then
     echo "Failed to submit a run for flip coin pipeline"
     return "$REV"

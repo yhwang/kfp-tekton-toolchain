@@ -35,7 +35,7 @@ check_dind_running() {
   kubectl wait --for=condition=Ready "pod/${DIND_POD_NAME}" -n "$NS" --timeout=10s
 }
 
-ibmcloud login --apikey ${IBM_CLOUD_API_KEY} --no-region
+ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
 ibmcloud ks cluster config -c "${KUBE_CLUSTER}"
 
