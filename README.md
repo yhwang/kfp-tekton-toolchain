@@ -1,5 +1,17 @@
-# kfp-tekton-toolchain
-Use toolchain in IBM Cloud to run CI/CD for kfp-tekton
+# IBM Cloud Toolchain for [kfp-tekton](https://github.com/kubeflow/kfp-tekton)
+
+We use the "Develop a Kubernetes app" [toolchain](https://www.ibm.com/cloud/architecture/tutorials/use-develop-kubernetes-app-toolchain?task=2) to enable CI/CD testing for kfp-tekton.
+
+![workflow](workflow.png)
+
+The toolchain is bound to an IBM Cloud Kubernetes Service (IKS) cluster and runs the following pipeline:
+
+1. Pull the latest commit
+2. Run unit tests
+3. Build docker images and push to IBM Cloud Registry
+3. Deploy tekton and kfp-tekton to IKS
+4. Run e2e tests (submit a pipeline, check endpoints, etc)
+5. Remove tekton and kfp-tekton
 
 ### Custom Image
 The [Dockerfile](./Dockerfile) is used as a `Custom Docker Image` to
