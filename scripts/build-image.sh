@@ -14,25 +14,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # source: https://raw.githubusercontent.com/open-toolchain/commons/master/scripts/check_registry.sh
+
+# Remove the x if you do need to print out each command
+set -xe
+
 # Environment variables needed by this script:
+# - IMAGE_NAME:           image name
+# - DOCKER_ROOT:          docker root
+# - DOCKER_FILE:          docker file
+# - REGISTRY_URL:         container registry url
+# - REGISTRY_NAMESPACE:   namespace for the image
+# - RUN_TASK:             execution task:
+#                           - `artifact`: prepare the artifact for next stage
+#                           - `image`: prune, build and push the image
+#
+# The full image url would be:
+# ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${BUILD_NUMBER}-${GIT_COMMIT_SHORT}
+
+# The following envs could be loaded from `build.properties` that
+# `run-test.sh` generates.
 # - REGION:               cloud region (us-south as default)
 # - ORG:                  target organization (dev-advo as default)
 # - SPACE:                target space (dev as default)
-# - IMAGE_NAME:           image name
-# - REGISTRY_URL:         registry url
-# - REGISTRY_NAMESPACE:   namespace for the image
-# - DOCKER_ROOT:          docker root
-# - DOCKER_FILE:          docker file
 # - GIT_BRANCH:           git branch
 # - GIT_COMMIT:           git commit hash
 # - GIT_COMMIT_SHORT:     git commit hash short
-
-set -xe
 
 REGION=${REGION:-"us-south"}
 ORG=${ORG:-"dev-advo"}
 SPACE=${SPACE:-"dev"}
 IMAGE_TAG="${BUILD_NUMBER}-${GIT_COMMIT_SHORT}"
+RUN_TASK=${RUN_TASK:-"artifact"}
 
 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
@@ -66,7 +78,7 @@ print_env_vars() {
 ######################################################################################
 # Copy any artifacts that will be needed for subsequent stages    #
 ######################################################################################
-artificate_for_next_stage() {
+artificat_for_next_stage() {
   echo "=========================================================="
   echo "Copy and prepare artificates for subsequent stages"
 
@@ -98,7 +110,7 @@ artificate_for_next_stage() {
   grep -v -i password "${ARCHIVE_DIR}/build.properties"
 }
 
-check_prune_images() {
+check_container_registry() {
   echo "=========================================================="
   echo "Checking registry current plan and quota"
   ibmcloud cr login
@@ -116,7 +128,9 @@ check_prune_images() {
   fi
   echo -e "Existing images in registry"
   ibmcloud cr images --restrict "${REGISTRY_NAMESPACE}/${IMAGE_NAME}"
+}
 
+prune_images() {
   KEEP=1
   echo -e "PURGING REGISTRY, only keeping last ${KEEP} image(s) based on image digests"
   COUNT=0
@@ -155,3 +169,21 @@ build_image() {
   ibmcloud cr image-inspect "${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_TAG}"
   ibmcloud cr images --restrict "${REGISTRY_NAMESPACE}/${IMAGE_NAME}"
 }
+
+print_env_vars
+
+case "$RUN_TASK" in
+  "artifact")
+    artificat_for_next_stage
+    ;;
+
+  "image")
+    check_container_registry
+    prune_images
+    build_image
+    ;;
+
+  *)
+    echo "please specify RUN_TASK=artifact|image"
+    ;;
+esac

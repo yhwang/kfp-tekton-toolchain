@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Remove the x if you do need to print out each command
 set -xe
 
 # Environment variables needed by this script:
@@ -24,6 +25,7 @@ set -xe
 REGION=${REGION:-"us-south"}
 ORG=${ORG:-"dev-advo"}
 SPACE=${SPACE:-"dev"}
+MAKE_TARGET=${MAKE_TARGET:-"run-go-unittests"}
 GIT_COMMIT_SHORT=$(git log -n1 --format=format:"%h")
 
 # Git repo cloned at $WORKING_DIR, copy into $ARCHIVE_DIR and
@@ -53,4 +55,4 @@ grep -v -i password "${ARCHIVE_DIR}/build.properties"
 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
 
-make run-go-unittests | tee "${ARCHIVE_DIR}/run-go-unittests.txt"
+make "$MAKE_TARGET"

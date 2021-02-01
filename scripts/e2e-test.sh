@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Remove the x if you do need to print out each command
 set -ex
 
 # Need the following env
