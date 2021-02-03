@@ -14,15 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # source: https://raw.githubusercontent.com/open-toolchain/commons/master/scripts/check_registry.sh
+
+# Remove the x if you need no print out of each command
+set -xe
+
 # Environment variables needed by this script:
 # - REGION:               cloud region (us-south as default)
 # - ORG:                  target organization (dev-advo as default)
 # - SPACE:                target space (dev as default)
 # - IBM_CLOUD_API_KEY:    iam api key
 # - KUBE_CLUSTER:         kubernetes cluster name
-# - DIND_NS:              kubernetes ns for DinD deployment         
-
-set -xe
+# - DIND_NS:              kubernetes ns for DinD deployment
 
 REGION=${REGION:-"us-south"}
 ORG=${ORG:-"dev-advo"}
@@ -50,7 +52,7 @@ spec:
         volumeMounts:
           - name: docker-graph-storage
             mountPath: /var/lib/docker
-    volumes: 
+    volumes:
       - name: docker-graph-storage
         emptyDir: {}
 EOF
@@ -59,13 +61,13 @@ EOF
 create_kubernetes_namespace() {
   local NS=$1
   shift
-  kubectl create ns $NS
+  kubectl create ns "$NS"
 }
 
 check_and_create_kubernetes_namespace() {
   local NS=$1
   shift
-  kubectl get ns $NS || create_kubernetes_namespace $NS
+  kubectl get ns "$NS" || create_kubernetes_namespace "$NS"
 }
 
 deploy_dind() {

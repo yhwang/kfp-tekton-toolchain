@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Remove the x if you do need to print out each command
+# Remove the x if you need no print out of each command
 set -xe
 
 # Environment variables needed by this script:
@@ -25,6 +25,7 @@ set -xe
 REGION=${REGION:-"us-south"}
 ORG=${ORG:-"dev-advo"}
 SPACE=${SPACE:-"dev"}
+RESOURCE_GROUP=${RESOURCE_GROUP:-"default"}
 MAKE_TARGET=${MAKE_TARGET:-"run-go-unittests"}
 GIT_COMMIT_SHORT=$(git log -n1 --format=format:"%h")
 
@@ -49,10 +50,25 @@ fi
   echo "REGION=${REGION}"
   echo "ORG=${ORG}"
   echo "SPACE=${SPACE}"
+  echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
 } >> "${ARCHIVE_DIR}/build.properties"
 grep -v -i password "${ARCHIVE_DIR}/build.properties"
 
-ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
-ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
+retry() {
+  local max=$1; shift
+  local interval=$1; shift
+
+  until "$@"; do
+    echo "trying.."
+    max=$((max-1))
+    if [[ "$max" -eq 0 ]]; then
+      return 1
+    fi
+    sleep "$interval"
+  done
+}
+
+retry 3 3 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
+retry 3 3 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE" -g "$RESOURCE_GROUP"
 
 make "$MAKE_TARGET"

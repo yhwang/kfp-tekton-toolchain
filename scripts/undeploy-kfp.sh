@@ -17,12 +17,13 @@
 # Remove the x if you need no print out of each command
 set -ex
 
-# These env vars should come from the build.properties that `deploy-tekton.sh` generates
+# Need the following env var
+# - KUBEFLOW_NS:                        namespace for kfp-tekton, defulat: kubeflow
+
+# These env vars should come from the build.properties that `build-image.sh` generates
 echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}"
-echo "TEKTON_VERSION=${TEKTON_VERSION}"
-echo "TEKTON_NS=${TEKTON_NS}"
-echo "TEKTON_MANIFEST_FILENAME=${TEKTON_MANIFEST_FILENAME}"
-echo "TEKTON_MANIFEST=${TEKTON_MANIFEST}"
+echo "KUBEFLOW_NS=${KUBEFLOW_NS}"
+echo "MANIFEST=${MANIFEST}"
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
 echo "BUILD_NUMBER=${BUILD_NUMBER}"
@@ -34,6 +35,9 @@ echo "REGION=${REGION}"
 echo "ORG=${ORG}"
 echo "SPACE=${SPACE}"
 echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
+
+MANIFEST="${MANIFEST:-"install/latest-kfp-tekton.yaml"}"
+KUBEFLOW_NS="${KUBEFLOW_NS:-kubeflow}"
 
 retry() {
   local max=$1; shift
@@ -53,6 +57,11 @@ retry 3 3 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
 retry 3 3 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE" -g "$RESOURCE_GROUP"
 retry 3 3 ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
 
-kubectl delete -f "$TEKTON_MANIFEST_FILENAME"
+kubectl delete -f "$MANIFEST" || true
 
-echo "Finished tekton undeployment."
+kubectl delete MutatingWebhookConfiguration cache-webhook-kubeflow || true
+
+kubectl delete ns "$KUBEFLOW_NS"
+
+echo "Finished kfp-tekton undeployment." 
+

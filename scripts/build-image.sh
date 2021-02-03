@@ -15,7 +15,7 @@
 # limitations under the License.
 # source: https://raw.githubusercontent.com/open-toolchain/commons/master/scripts/check_registry.sh
 
-# Remove the x if you do need to print out each command
+# Remove the x if you need no print out of each command
 set -xe
 
 # Environment variables needed by this script:
@@ -46,8 +46,22 @@ SPACE=${SPACE:-"dev"}
 IMAGE_TAG="${BUILD_NUMBER}-${GIT_COMMIT_SHORT}"
 RUN_TASK=${RUN_TASK:-"artifact"}
 
-ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
-ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
+retry() {
+  local max=$1; shift
+  local interval=$1; shift
+
+  until "$@"; do
+    echo "trying.."
+    max=$((max-1))
+    if [[ "$max" -eq 0 ]]; then
+      return 1
+    fi
+    sleep "$interval"
+  done
+}
+
+retry 3 3 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
+retry 3 3 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE" -g "$RESOURCE_GROUP"
 
 print_env_vars() {
   echo "REGISTRY_URL=${REGISTRY_URL}"
@@ -65,6 +79,7 @@ print_env_vars() {
   echo "REGION=${REGION}"
   echo "ORG=${ORG}"
   echo "SPACE=${SPACE}"
+  echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
 
   # View build properties
   if [ -f build.properties ]; then

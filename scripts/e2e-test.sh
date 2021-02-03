@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Remove the x if you do need to print out each command
+# Remove the x if you need no print out of each command
 set -ex
 
 # Need the following env
@@ -32,6 +32,7 @@ echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}"
 echo "REGION=${REGION}"
 echo "ORG=${ORG}"
 echo "SPACE=${SPACE}"
+echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
 echo "PIPELINE_KUBERNETES_CLUSTER_NAME=${PIPELINE_KUBERNETES_CLUSTER_NAME}"
 echo "KUBEFLOW_NS=${KUBEFLOW_NS}"
 
@@ -46,15 +47,29 @@ else
 fi
 cp build.properties "${ARCHIVE_DIR}/" || :
 
+retry() {
+  local max=$1; shift
+  local interval=$1; shift
+
+  until "$@"; do
+    echo "trying.."
+    max=$((max-1))
+    if [[ "$max" -eq 0 ]]; then
+      return 1
+    fi
+    sleep "$interval"
+  done
+}
+
 # Set up kubernetes config
-ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
-ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
-ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
+retry 3 3 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
+retry 3 3 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE" -g "$RESOURCE_GROUP"
+retry 3 3 ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
 
 # Prepare python venv and install sdk
-python3 -m venv .venv                                                           
-source .venv/bin/activate                                                       
-pip install wheel 
+python3 -m venv .venv
+source .venv/bin/activate
+pip install wheel
 pip install -e sdk/python
 pip install -U setuptools
 pip install pytest
