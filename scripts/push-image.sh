@@ -43,7 +43,7 @@ ibmcloud cr login
 kubectl cp -n "$DIND_NS" docker:/certs/client ~/.docker
 kubectl port-forward -n "$DIND_NS" docker 2376:2376 &
 # wait for the port-forward
-sleep 3
+sleep 5
 
 # login dockerhub
 set +x
