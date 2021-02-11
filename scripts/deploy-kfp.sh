@@ -102,7 +102,7 @@ echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
 
 # C_DIR="${BASH_SOURCE%/*}"
 # if [[ ! -d "$C_DIR" ]]; then C_DIR="$PWD"; fi
-# source "${C_DIR}/helper_functions.sh"
+# source "${C_DIR}/helper-functions.sh"
 
 retry() {
   local max=$1; shift

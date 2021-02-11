@@ -50,7 +50,7 @@ echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
 
 # C_DIR="${BASH_SOURCE%/*}"
 # if [[ ! -d "$C_DIR" ]]; then C_DIR="$PWD"; fi
-# source "${C_DIR}/helper_functions.sh"
+# source "${C_DIR}/helper-functions.sh
 
 # Retrive tekton yaml and store it to ARCHIVE_DIR and
 # could be used at cleanup stage
