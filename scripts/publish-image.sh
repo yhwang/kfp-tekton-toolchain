@@ -18,26 +18,39 @@
 # Remove the x if you do need to print out each command
 set -xe
 
+# DOCKERHUB_USERNAME
+# DOCKERHUB_TOKEN
+DIND_NS=${DIND_NS:-"docker-build"}
 IMAGES=${IMAGES:-"api-server persistenceagent metadata-writer scheduledworkflow"}
-PUSH_TAG=${PUSH_TAG:-"nightly"}
+PUBLISH_TAG=${PUBLISH_TAG:-"nightly"}
 DOCKERHUB_NAMESPACE=${DOCKERHUB_NAMESPACE:-"aipipeline"}
 
 echo "REGISTRY_URL=${REGISTRY_URL}"
 echo "REGISTRY_NAMESPACE=${REGISTRY_NAMESPACE}"
-echo "BUILD_NUMBER=${BUILD_NUMBER}"
-echo "ARCHIVE_DIR=${ARCHIVE_DIR}"
-echo "GIT_BRANCH=${GIT_BRANCH}"
-echo "GIT_COMMIT=${GIT_COMMIT}"
-echo "GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT}"
 echo "REGION=${REGION}"
 echo "ORG=${ORG}"
 echo "SPACE=${SPACE}"
+echo "RESOURCE_GROUP=${RESOURCE_GROUP}"
 echo "IMAGE_TAG=${IMAGE_TAG}"
 
-ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
-ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE"
-ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
-ibmcloud cr login
+retry() {
+  local max=$1; shift
+  local interval=$1; shift
+
+  until "$@"; do
+    echo "trying.."
+    max=$((max-1))
+    if [[ "$max" -eq 0 ]]; then
+      return 1
+    fi
+    sleep "$interval"
+  done
+}
+
+retry 3 3 ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" --no-region
+retry 3 3 ibmcloud target -r "$REGION" -o "$ORG" -s "$SPACE" -g "$RESOURCE_GROUP"
+retry 3 3 ibmcloud ks cluster config -c "$PIPELINE_KUBERNETES_CLUSTER_NAME"
+retry 3 3 ibmcloud cr login
 
 # copy certs to local env
 kubectl cp -n "$DIND_NS" docker:/certs/client ~/.docker
@@ -56,10 +69,10 @@ for one in $IMAGES; do
     "${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${one}:${IMAGE_TAG}"
 
   DOCKER_HOST=tcp://localhost:2376 DOCKER_TLS_VERIFY=1  docker tag \
-    "${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${one}:${IMAGE_TAG}" "${DOCKERHUB_NAMESPACE}/${one}:${PUSH_TAG}"
+    "${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${one}:${IMAGE_TAG}" "${DOCKERHUB_NAMESPACE}/${one}:${PUBLISH_TAG}"
 
   DOCKER_HOST=tcp://localhost:2376 DOCKER_TLS_VERIFY=1  docker push \
-    "${DOCKERHUB_NAMESPACE}/${one}:${PUSH_TAG}"
+    "${DOCKERHUB_NAMESPACE}/${one}:${PUBLISH_TAG}"
 done
 
 kill %1

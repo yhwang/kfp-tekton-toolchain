@@ -32,7 +32,7 @@ DIND_POD_NAME="docker"
 
 check_dind_running() {
   local NS=$1
-  kubectl get pod "$DIND_POD_NAME" -n "$NS"
+  kubectl get pod "$DIND_POD_NAME" -n "$DIND_NS"
   kubectl wait --for=condition=Ready "pod/${DIND_POD_NAME}" -n "$NS" --timeout=10s
 }
 
