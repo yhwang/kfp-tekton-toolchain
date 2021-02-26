@@ -227,6 +227,61 @@ spec:
       workspaces:
       - name: task-pvc
         workspace: pipeline-pvc
+    - name: build-images-cacheserver
+      retries: 1
+      taskRef:
+        name: build-images
+      runAfter:
+        - test
+      params:
+        - name: apikey
+          value: $(params.apikey)
+        - name: image-name
+          value: cache-server
+        - name: docker-root
+          value: .
+        - name: docker-file
+          value: backend/Dockerfile.cacheserver
+        - name: registry-url
+          value: $(params.registry-url)
+        - name: registry-namespace
+          value: $(params.registry-namespace)
+        - name: docker-username
+          value: iamapikey
+        - name: docker-password
+          value: $(params.docker-password)
+        - name: run-task
+          value: image
+      workspaces:
+      - name: task-pvc
+        workspace: pipeline-pvc
+    - name: build-images-frontend
+      taskRef:
+        name: build-images-args
+      runAfter:
+        - test
+      params:
+        - name: apikey
+          value: $(params.apikey)
+        - name: image-name
+          value: frontend
+        - name: docker-root
+          value: .
+        - name: docker-file
+          value: frontend/Dockerfile
+        - name: registry-url
+          value: $(params.registry-url)
+        - name: registry-namespace
+          value: $(params.registry-namespace)
+        - name: docker-username
+          value: iamapikey
+        - name: docker-password
+          value: $(params.docker-password)
+        - name: run-task
+          value: image
+      workspaces:
+      - name: task-pvc
+        workspace: pipeline-pvc
     - name: deploy
       taskRef:
         name: deploy
@@ -235,6 +290,8 @@ spec:
         - build-images-persistenceagent
         - build-images-metadata-writer
         - build-images-scheduledworkflow
+        - build-images-cacheserver
+        - build-images-frontend
       params:
         - name: apikey
           value: $(params.apikey)

@@ -134,7 +134,74 @@ spec:
       args:
         - set -ex;
           cd /artifacts && source build.properties;
-          source ./scripts/deploy/iks/build-image.sh;
+          source <(curl -sSL "https://raw.githubusercontent.com/yhwang/kfp-tekton-toolchain/main/scripts/build-image.sh");
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-images-args
+spec:
+  params:
+    - name: apikey
+      description: the ibmcloud api key
+    - name: image-name
+      description: image name
+    - name: docker-root
+      description: root directory for docker
+      default: .
+    - name: docker-file
+      description: dockerfile
+    - name: registry-url
+      description: container registry url
+    - name: registry-namespace
+      description: the ibmcloud registry namespace
+    - name: docker-username
+      description: for ibm container registry
+      default: iamapikey
+    - name: docker-password
+      description: iam api key
+    - name: run-task
+      description: "execution task: artifact or image"
+    - name: archive-dir
+      description: archive directory
+      default: "."
+  workspaces:
+  - name: task-pvc
+    mountPath: /artifacts
+  steps:
+    - name: build-image
+      image: docker.io/aipipeline/pipeline-base-image:1.0
+      env:
+        - name: DOCKER_USERNAME
+          value: $(params.docker-username)
+        - name: DOCKER_PASSWORD
+          value: $(params.docker-password)
+        - name: IBM_CLOUD_API_KEY
+          value: $(params.apikey)
+        - name: IMAGE_NAME
+          value: $(params.image-name)
+        - name: DOCKER_ROOT
+          value: $(params.docker-root)
+        - name: DOCKER_FILE
+          value: $(params.docker-file)
+        - name: REGISTRY_URL
+          value: $(params.registry-url)
+        - name: REGISTRY_NAMESPACE
+          value: $(params.registry-namespace)
+        - name: RUN_TASK
+          value: $(params.run-task)
+        - name: ARCHIVE_DIR
+          value: $(params.archive-dir)
+        - name: BUILD_NUMBER
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['devops.cloud.ibm.com/build-number']
+      command: ["/bin/bash", "-c"]
+      args:
+        - set -ex;
+          cd /artifacts && source build.properties;
+          export BUILD_ARG_LIST="COMMIT_HASH=$(git rev-parse HEAD) DATE=\"$(date -u)\"";
+          source <(curl -sSL "https://raw.githubusercontent.com/yhwang/kfp-tekton-toolchain/main/scripts/build-image.sh");
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
@@ -291,7 +358,7 @@ spec:
       description: dockerhub password/token
     - name: images
       description: image list to publish
-      default: "api-server persistenceagent metadata-writer scheduledworkflow"
+      default: "api-server persistenceagent metadata-writer scheduledworkflow cache-server frontend"
     - name: image-tag
       description: image tag
       default: "nightly"
