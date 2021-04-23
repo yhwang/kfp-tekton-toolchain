@@ -63,7 +63,7 @@ RUN curl -L https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz | tar -xz  
 	&& echo "export GOPATH=\$HOME/go" >> ~/.bashrc \
 	&& echo "export PATH=\$PATH:/usr/local/go/bin:\$GOPATH/bin" >> ~/.bashrc
 
-ARG KUBECTL_VERSION=v1.18.15
+ARG KUBECTL_VERSION=v1.19.9
 RUN wget --quiet --output-document=/usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl  \
 	&& chmod +x /usr/local/bin/kubectl
 
@@ -90,6 +90,12 @@ RUN wget --no-check-certificate https://github.com/stedolan/jq/releases/download
 	&& cp /tmp/jq-linux64 /usr/bin/jq  \
 	&& chmod +x /usr/bin/jq  \
 	&& rm -f /tmp/jq-linux64
+
+ARG YQ_VERSION=v4.7.0
+RUN wget --no-check-certificate https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /tmp/yq-linux64  \
+	&& cp /tmp/yq-linux64 /usr/bin/yq  \
+	&& chmod +x /usr/bin/yq  \
+	&& rm -f /tmp/yq-linux64
 
 ARG IBMCLOUD_VERSION=1.3.0
 RUN wget --quiet -O /tmp/Bluemix_CLI.tar.gz https://download.clis.cloud.ibm.com/ibm-cloud-cli/${IBMCLOUD_VERSION}/IBM_Cloud_CLI_${IBMCLOUD_VERSION}_amd64.tar.gz  \
