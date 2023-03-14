@@ -57,13 +57,13 @@ RUN curl -l https://raw.githubusercontent.com/creationix/nvm/v0.35.3/install.sh 
 	&& cd ~/.nvm/versions/node/$NODE_VERSION/lib/  \
 	&& npm install npm
 
-ARG GO_VERSION=1.17.6
+ARG GO_VERSION=1.19.6
 RUN curl -L https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz | tar -xz  \
     && mv go/ /usr/local/ \
 	&& echo "export GOPATH=\$HOME/go" >> ~/.bashrc \
 	&& echo "export PATH=\$PATH:/usr/local/go/bin:\$GOPATH/bin" >> ~/.bashrc
 
-ARG KUBECTL_VERSION=v1.23.9
+ARG KUBECTL_VERSION=v1.25.3
 RUN wget --quiet --output-document=/usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl  \
 	&& chmod +x /usr/local/bin/kubectl
 
@@ -97,7 +97,7 @@ RUN wget --no-check-certificate https://github.com/mikefarah/yq/releases/downloa
 	&& chmod +x /usr/bin/yq  \
 	&& rm -f /tmp/yq-linux64
 
-ARG IBMCLOUD_VERSION=2.7.0
+ARG IBMCLOUD_VERSION=2.15.0
 RUN wget --quiet -O /tmp/Bluemix_CLI.tar.gz https://download.clis.cloud.ibm.com/ibm-cloud-cli/${IBMCLOUD_VERSION}/IBM_Cloud_CLI_${IBMCLOUD_VERSION}_amd64.tar.gz  \
 	&& tar -xzvf /tmp/Bluemix_CLI.tar.gz -C /tmp  \
 	&& export PATH=/opt/IBM/cf/bin:$PATH  \
@@ -107,13 +107,13 @@ RUN wget --quiet -O /tmp/Bluemix_CLI.tar.gz https://download.clis.cloud.ibm.com/
 	&& mkdir -p /usr/local/Bluemix/bin/cfcli  \
 	&& mkdir -p /usr/local/ibmcloud/bin/cfcli
 
-RUN ibmcloud plugin install container-service -r Bluemix -v 1.0.408  \
-	&& ibmcloud plugin install container-registry -r Bluemix -v 0.1.571  \
-	&& ibmcloud plugin install cloud-functions -r Bluemix -v 1.0.58  \
-	&& ibmcloud plugin install schematics -r Bluemix -v 1.7.2  \
-	&& ibmcloud plugin install doi -r Bluemix -v 0.3.5  \
-	&& ibmcloud plugin install cis -r Bluemix -v 1.14.4  \
-	&& ibmcloud cf install -v 6.51.0 --force
+RUN ibmcloud plugin install container-service -r Bluemix -v 1.0.498  \
+	&& ibmcloud plugin install container-registry -r Bluemix -v 1.0.6  \
+	&& ibmcloud plugin install cloud-functions -r Bluemix -v 1.0.64  \
+	&& ibmcloud plugin install schematics -r Bluemix -v 1.12.7  \
+	&& ibmcloud plugin install doi -r Bluemix -v 0.4.1  \
+	&& ibmcloud plugin install cis -r Bluemix -v 1.14.9  \
+	&& ibmcloud cf install -v 6.53.0 --force
 
 RUN ln -s /usr/local/ibmcloud/bin/cfcli/cf /usr/local/Bluemix/bin/cfcli/cf  \
 	&& ln -s /usr/local/ibmcloud/bin/cfcli/cf /usr/local/bin/cf  \
