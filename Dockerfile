@@ -67,11 +67,8 @@ ARG KUBECTL_VERSION=v1.25.3
 RUN wget --quiet --output-document=/usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl  \
 	&& chmod +x /usr/local/bin/kubectl
 
-RUN wget --quiet --output-document=/usr/local/bin/kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.2.1/kustomize_kustomize.v3.2.1_linux_amd64 \
-	&& chmod +x /usr/local/bin/kustomize
-
-RUN curl -L https://github.com/tektoncd/cli/releases/download/v0.11.0/tkn_0.11.0_Linux_x86_64.tar.gz | tar -xz tkn \
-    && mv tkn /usr/local/bin/
+RUN curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.0.0/kustomize_v5.0.0_linux_amd64.tar.gz | tar -xz \
+	&& mv kustomize /usr/local/bin/kustomize
 
 ARG HELM2_VERSION=v2.17.0
 ARG HELM3_VERSION=v3.4.2
