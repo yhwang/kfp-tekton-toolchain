@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 RUN set -xe  \
 	&& echo '#!/bin/sh' > /usr/sbin/policy-rc.d  \
@@ -32,7 +32,6 @@ RUN apt-get -q update  \
 	&& apt-get -q install -y sudo apt-transport-https zip unzip bzip2 xz-utils git \
 	dnsutils gettext wget build-essential openssl locales make docker-ce python3-pip \
 	python3.8 python3.8-venv && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 9 \
-	&& update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 \
 	&& curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash  \
 	&& apt-get -q install git-lfs  \
 	&& git lfs install  \
@@ -46,8 +45,8 @@ RUN git config --global http.sslverify false  \
 
 RUN pip3 install -U pip setuptools && pip3 install wheel
 
-ENV NODE_VERSION=v16.16.0
-RUN curl -l https://raw.githubusercontent.com/creationix/nvm/v0.35.3/install.sh -o /tmp/install.sh  \
+ENV NODE_VERSION=v18.6.0
+RUN curl -l https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh -o /tmp/install.sh  \
 	&& chmod a+x /tmp/install.sh  \
 	&& /tmp/install.sh  \
 	&& rm /tmp/install.sh  \
